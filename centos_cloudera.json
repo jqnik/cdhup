@@ -1,0 +1,106 @@
+{
+  "_comment": "Build with `packer build centos_cdh.json`",
+  "builders": [
+    {
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort}}/{{ user `kickstart` }}<enter>",
+        "hostname={{ user `hostname` }} "
+      ],
+      "disk_size": "{{ user `disk_size` }}",
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "guest_os_type": "{{ user `virtualbox_guest_os_type` }}",
+      "hard_drive_interface": "sata",
+      "headless": "{{ user `headless` }}",
+      "http_directory": "packer_scripts",
+      "iso_checksum": "{{ user `iso_checksum` }}",
+      "iso_checksum_type": "{{ user `iso_checksum_type` }}",
+      "iso_urls": [
+        "{{ user `iso_path` }}/{{ user `iso_name` }}",
+        "{{ user `iso_url` }}"
+      ],
+      "output_directory": "output-{{ user `vm_name` }}-virtualbox-iso",
+      "shutdown_command": "{{ user `shutdown_command` }}",
+      "ssh_password": "{{ user `ssh_password` }}",
+      "ssh_username": "{{ user `ssh_username` }}",
+      "ssh_wait_timeout": "10000s",
+      "type": "virtualbox-iso",
+      "vboxmanage": [
+        [
+          "modifyvm", "{{.Name}}", "--memory", "{{ user `memory` }}"
+        ],
+        [
+          "modifyvm", "{{.Name}}", "--cpus", "{{ user `cpus` }}"
+        ]
+      ],
+      "virtualbox_version_file": ".vbox_version",
+      "vm_name": "{{ user `vm_name` }}"
+    }
+  ],
+  "post-processors": [
+    {
+      "keep_input_artifact": false,
+      "output": "box/{{.Provider}}/{{user `vm_name`}}-{{user `cm`}}{{user `cm_version`}}-{{user `version`}}.box",
+      "type": "vagrant",
+      "vagrantfile_template": "{{ user `vagrantfile_template` }}"
+    }
+  ],
+  "provisioners": [
+    {
+      "environment_vars": [
+        "CM={{user `cm`}}",
+        "CM_VERSION={{user `cm_version`}}",
+        "DESKTOP={{user `desktop`}}",
+        "DOCKER={{user `docker`}}",
+        "UPDATE={{user `update`}}",
+        "INSTALL_VAGRANT_KEY={{user `install_vagrant_key`}}",
+        "SSH_USERNAME={{user `ssh_username`}}",
+        "SSH_PASSWORD={{user `ssh_password`}}",
+        "HOSTNAME={{user `hostname`}}",
+        "CMRPM_URL={{user `cmrpm_url`}}",
+        "http_proxy={{user `http_proxy`}}",
+        "https_proxy={{user `https_proxy`}}",
+        "ftp_proxy={{user `ftp_proxy`}}",
+        "rsync_proxy={{user `rsync_proxy`}}",
+        "no_proxy={{user `no_proxy`}}"
+      ],
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -E -S bash '{{.Path}}'",
+      "scripts": [
+        "packer_scripts/fix-slow-dns.sh",
+        "packer_scripts/sshd.sh",
+        "packer_scripts/update.sh",
+        "packer_scripts/vagrant.sh",
+        "packer_scripts/desktop.sh",
+        "packer_scripts/vmware.sh",
+        "packer_scripts/virtualbox.sh",
+        "packer_scripts/cmtool.sh",
+        "packer_scripts/docker.sh",
+        "packer_scripts/motd.sh"
+      ],
+      "type": "shell"
+    }
+  ],
+  "variables": {
+    "cm": "nocm",
+    "cm_version": "",
+    "custom_script": ".",
+    "desktop": "false",
+    "docker": "false",
+    "ftp_proxy": "{{env `ftp_proxy`}}",
+    "headless": "",
+    "http_proxy": "{{env `http_proxy`}}",
+    "https_proxy": "{{env `https_proxy`}}",
+    "install_vagrant_key": "true",
+    "no_proxy": "{{env `no_proxy`}}",
+    "parallels_guest_os_type": "centos",
+    "rsync_proxy": "{{env `rsync_proxy`}}",
+    "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
+    "ssh_password": "vagrant",
+    "ssh_username": "vagrant",
+    "update": "false",
+    "vagrantfile_template": "",
+    "version": "0.1.0",
+    "virtualbox_guest_os_type": "RedHat_64",
+    "vmware_guest_os_type": "centos-7"
+  }
+}
+
